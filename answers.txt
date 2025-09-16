@@ -1,3 +1,80 @@
 The THIEF is: Bruce
 The city the thief ESCAPED TO: New York City
 The ACCOMPLICE is: Robin
+
+-- See database structure
+.schema;
+
+-- Step 1: Find the crime report on July 28, 2024
+SELECT * 
+FROM crime_scene_reports 
+WHERE year = 2024 AND month = 7 AND day = 28;
+
+-- Step 2: Get witness interviews from that same day
+SELECT * 
+FROM interviews 
+WHERE year = 2024 AND month = 7 AND day = 28;
+
+-- Step 3: Find ATM withdrawals on Leggett Street (suspect withdrew cash before theft)
+SELECT * 
+FROM atm_transactions 
+WHERE year = 2024 AND month = 7 AND day = 28 
+  AND atm_location = 'Leggett Street' 
+  AND transaction_type = 'withdraw';
+
+-- Step 4: Get names of people who withdrew money there
+SELECT name
+FROM people
+WHERE id IN (
+  SELECT person_id 
+  FROM bank_accounts
+  WHERE account_number IN (
+    SELECT account_number
+    FROM atm_transactions
+    WHERE year = 2024 AND month = 7 AND day = 28
+      AND atm_location = 'Leggett Street'
+      AND transaction_type = 'withdraw'
+  )
+);
+
+-- Step 5: Check all phone calls on the day (witness said call < 1 minute)
+SELECT caller_person.name AS caller, receiver_person.name AS receiver
+FROM phone_calls AS c
+JOIN people AS caller_person ON c.caller = caller_person.phone_number
+JOIN people AS receiver_person ON c.receiver = receiver_person.phone_number
+WHERE c.year = 2024 AND c.month = 7 AND c.day = 28 
+  AND c.duration <= 60;
+
+-- Step 6: See who left the bakery parking lot after 10:15am
+SELECT name
+FROM people
+WHERE license_plate IN (
+  SELECT license_plate
+  FROM bakery_security_logs
+  WHERE year = 2024 AND month = 7 AND day = 28
+    AND hour = 10
+    AND minute BETWEEN 15 AND 25
+    AND activity = 'exit'
+);
+
+-- Step 7: Find earliest flight the next morning (July 29)
+SELECT * 
+FROM flights 
+WHERE year = 2024 AND month = 7 AND day = 29
+ORDER BY hour, minute
+LIMIT 1;
+
+-- Step 8: Get names of passengers on that earliest flight
+SELECT name
+FROM people
+WHERE passport_number IN (
+  SELECT passport_number
+  FROM passengers
+  WHERE flight_id = (
+    SELECT id
+    FROM flights
+    WHERE year = 2024 AND month = 7 AND day = 29
+    ORDER BY hour, minute
+    LIMIT 1
+  )
+);
