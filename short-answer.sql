@@ -1,5 +1,5 @@
 -- See database structure
-.schema;
+.schema
 
 -- Step 1: Find the crime report on July 28, 2024
 SELECT * 
